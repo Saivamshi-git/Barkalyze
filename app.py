@@ -3,7 +3,6 @@ import streamlit as st
 import numpy as np
 import threading
 import time
-import requests
 from deepface import DeepFace
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, RTCConfiguration
 import config
@@ -22,6 +21,7 @@ class FaceEmotionProcessor(VideoProcessorBase):
         self.current_video = "neutral"
         self.force_playing = False
         self.emotion_lock = threading.Lock()
+        self.frame_count = 0  # Track frame count to skip frames
 
         # Start a separate thread for DeepFace analysis
         self.emotion_thread = threading.Thread(target=self.detect_emotion, daemon=True)
@@ -29,6 +29,10 @@ class FaceEmotionProcessor(VideoProcessorBase):
 
     def recv(self, frame):
         global reaction_frame
+
+        self.frame_count += 1
+        if self.frame_count % config.FRAME_SKIP != 0:
+            return frame  # Skip frames to optimize CPU usage
 
         img = frame.to_ndarray(format="bgr24")
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -77,30 +81,27 @@ class FaceEmotionProcessor(VideoProcessorBase):
             time.sleep(0.1)  # Avoid CPU overuse
 
 def fetch_video_from_google_drive(emotion):
-    """Fetches video from Google Drive and loads it into a NumPy buffer."""
+    """Fetches video from Google Drive and loads it into a cv2 VideoCapture object."""
     global video_data
 
     video_url = config.EMOTION_VIDEOS.get(emotion, config.EMOTION_VIDEOS["neutral"])
     
     try:
-        response = requests.get(video_url, stream=True)
-        if response.status_code == 200:
-            video_data = np.asarray(bytearray(response.content), dtype=np.uint8)
-        else:
-            st.error(f"Failed to fetch video for {emotion}")
+        video_data = cv2.VideoCapture(video_url)
+        if not video_data.isOpened():
+            st.error(f"Failed to load video for {emotion}")
     except Exception as e:
         st.error(f"Error fetching video: {e}")
 
 def process_reaction_video():
-    """Continuously processes video frames from the downloaded data."""
+    """Continuously processes video frames from the streamed data."""
     global reaction_frame, video_data
 
     while True:
         if video_data is None:
             fetch_video_from_google_drive("neutral")  # Default video
         
-        video_cap = cv2.VideoCapture()
-        video_cap.open(cv2.IMREAD_COLOR, video_data)
+        video_cap = video_data  # Use the already initialized VideoCapture object
 
         while video_cap.isOpened():
             ret, video_frame = video_cap.read()
