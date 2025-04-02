@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autoplay Video Player</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            height: 40vh;
+            margin: 0;
+        }
+        video {
+            width: 80vw;  /* Make video take 80% of screen width */
+            height: 40vh; /* Make video take 90% of screen height */
+        }
+        p {
+            font-size: 20px;
+            font-weight: bold;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <p>this is a {{ EMOTION }}</p>
+    <video id="autoplay-video" autoplay loop muted playsinline></video>
+    <script>
+        var videoElement = document.getElementById("autoplay-video");
+        var base64Video = {{ VIDEO_DATA }};  // Base64 dictionary injected from Python
+
+        function playVideo(base64Video) {
+            var binary = atob(base64Video);
+            var array = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i++) {
+                array[i] = binary.charCodeAt(i);
+            }
+            var blob = new Blob([array], { type: "video/mp4" });
+            var url = URL.createObjectURL(blob);
+
+            videoElement.src = url;
+            videoElement.load();
+            videoElement.play().catch(err => console.log("Autoplay failed:", err));
+        }
+
+        // Start the first video
+        playVideo(base64Video);
+    </script>
+</body>
+</html>
