@@ -4,6 +4,3 @@ numpy
 deepface
 streamlit-webrtc
 tensorflow==2.19.0
-tf-keras
-os
-streamlit_autorefresh
