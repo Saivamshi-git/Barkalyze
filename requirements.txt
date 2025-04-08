@@ -1,8 +1,8 @@
 streamlit
-opencv-python
+opencv-python-headless==4.8.1.78
 numpy
 deepface
 streamlit-webrtc
-tensorflow==2.19.0
+tensorflow==2.13.0
 tf-keras
 streamlit_autorefresh
