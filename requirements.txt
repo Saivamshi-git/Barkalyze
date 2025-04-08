@@ -6,4 +6,3 @@ streamlit-webrtc
 tensorflow==2.19.0
 tf-keras
 streamlit_autorefresh
-json
